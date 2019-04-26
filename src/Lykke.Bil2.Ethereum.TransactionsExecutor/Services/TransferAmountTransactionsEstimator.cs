@@ -1,15 +1,22 @@
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using Lykke.Bil2.Contract.TransactionsExecutor.Requests;
 using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
+using Lykke.Bil2.SharedDomain;
+using Lykke.Numerics;
+using System.Threading.Tasks;
+using Lykke.Bil2.Contract.Common.Exceptions;
+using Lykke.Bil2.Ethereum.TransactionsExecutor.Constants;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class TransferAmountTransactionsEstimator : ITransferAmountTransactionsEstimator
     {
-        public TransferAmountTransactionsEstimator(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private readonly IEthereumApi _ethereumApi;
+
+        public TransferAmountTransactionsEstimator(IEthereumApi ethereumApi)
         {
+            _ethereumApi = ethereumApi;
         }
 
         public async Task<EstimateTransactionResponse> EstimateTransferAmountAsync(EstimateTransferAmountTransactionRequest request)
@@ -29,21 +36,15 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
             //
             // Result usually consists of single fee element,
             // but for some blockchains fees may be charged in multiple currencies/tokens.
-            //
-            // For example:
-            //
-            // var fee = ...;
-            //
-            // return new EstimateTransactionResponse
-            // (
-            //     new []
-            //     {
-            //         new Fee { new Asset("BTC"), UMoney.Create(fee, 8) }
-            //     }
-            // );
 
+            if (request.Transfers.Count != 1)
+                throw new RequestValidationException("Amount of transfer should be equal to 1");
 
-            throw new System.NotImplementedException();
+            var transfer = request.Transfers.First();
+
+            var transactionResponse = await _ethereumApi.EstimateTransferAsync(transfer);
+
+            return transactionResponse;
         }
     }
 }

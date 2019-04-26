@@ -1,15 +1,19 @@
-using System.Threading.Tasks;
-using Lykke.Bil2.Contract.Common;
-using Lykke.Bil2.Contract.Common.Exceptions;
+﻿using Lykke.Bil2.Contract.Common.Exceptions;
 using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
+using Lykke.Bil2.SharedDomain;
+using Nethereum.Util;
+using System.Threading.Tasks;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class AddressFormatsProvider : IAddressFormatsProvider
     {
-        public AddressFormatsProvider(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private readonly AddressUtil _addressUtil;
+
+        public AddressFormatsProvider()
         {
+            _addressUtil = new AddressUtil();
         }
 
         public async Task<AddressFormatsResponse> GetFormatsAsync(string address)
@@ -28,27 +32,22 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
             //     Likely a temporary issue with infrastructure or configuration,
             //     request should be repeated later.
             //
-            // For example:
-            //
-            // Account account;
-            //
-            // try
-            // {
-            //     account = Account.CreateFromEncodedAddress(address);
-            // }
-            // catch
-            // {
-            //     throw new RequestValidationException("Invalid address", nameof(address));
-            // }
-            //
-            // return new AddressFormatsResponse(new AddressFormat[]
-            // {
-            //     new AddressFormat(account.Address.Pretty, "Pretty"),
-            //     new AddressFormat(account.Address.Plain, "Plain")
-            // });
 
+            string checkSumAddress;
 
-            throw new System.NotImplementedException();
+            try
+            {
+                checkSumAddress = _addressUtil.ConvertToChecksumAddress(address);
+            }
+            catch
+            {
+                throw new RequestValidationException("Invalid address", nameof(address));
+            }
+
+            return new AddressFormatsResponse(new AddressFormat[]
+            {
+                 new AddressFormat(checkSumAddress, "Checksum"),
+            });
         }
     }
 }

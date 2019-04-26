@@ -1,25 +1,24 @@
-using System;
-using System.Threading.Tasks;
-using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
+﻿using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
+using System.Threading.Tasks;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class BlockchainInfoProvider : IBlockchainInfoProvider
     {
-        public BlockchainInfoProvider(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private readonly IEthereumApi _ethereumApi;
+
+        public BlockchainInfoProvider(IEthereumApi ethereumApi)
         {
+            _ethereumApi = ethereumApi;
         }
 
-        public Task<BlockchainInfo> GetInfoAsync()
+        public async Task<BlockchainInfo> GetInfoAsync()
         {
-            // TODO: Provide current blockchain state (last confirmed block number and time).
-            //
-            // var info = ...;
-            //
-            // return new BlockchainInfo(info.LastIrreversibleBlockNumber, info.LastIrreversibleBlockTime);
+            var (lastIrreversibleBlockNumber, 
+                lastIrreversibleBlockTime) = await _ethereumApi.GetLastIrreversibleBlockAsync();
 
-            throw new NotImplementedException();
+            return new BlockchainInfo(lastIrreversibleBlockNumber, lastIrreversibleBlockTime);
         }
     }
 }

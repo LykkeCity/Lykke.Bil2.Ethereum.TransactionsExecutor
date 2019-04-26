@@ -1,13 +1,20 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Lykke.Bil2.Contract.Common.Exceptions;
 using Lykke.Bil2.Contract.TransactionsExecutor.Requests;
+using Lykke.Bil2.Sdk.TransactionsExecutor.Exceptions;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
+using Lykke.Bil2.SharedDomain;
+using Newtonsoft.Json;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class TransactionBroadcaster : ITransactionBroadcaster
     {
-        public TransactionBroadcaster(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private IEthereumApi _ethereumApi;
+
+        public TransactionBroadcaster(IEthereumApi ethereumApi)
         {
+            _ethereumApi = ethereumApi;
         }
 
         public async Task BroadcastAsync(BroadcastTransactionRequest request)
@@ -30,33 +37,16 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
             //     if there are any other errors.
             //     It can be thrown without guarantee that transaction was broadcasted to the
             //     blockchain or not. Request will be not retried automatically.
-            //
-            // For example
-            //
-            // SignedTransaction signed;
-            //
-            // try
-            // {
-            //     signed = JsonConvert.DeserializeObject<SignedTransaction>(request.SignedTransaction.DecodeToString());
-            // }
-            // catch (JsonException ex)
-            // {
-            //     throw new RequestValidationException("Failed to deserialize signed transaction", request.SignedTransaction, ex, nameof(request.SignedTransaction));
-            // }
-            //
-            // var result = await EthereumApi.Send(signed);
-            //
-            // switch (result)
-            // {
-            //     case 100:
-            //         throw new TransactionBroadcastingException(TransactionBroadcastingError.RebuildRequired, "Transaction expired");
-            //
-            //     case 200:
-            //         throw new TransactionBroadcastingException(TransactionBroadcastingError.RetryLater, "Node is busy");
-            // }
 
-
-            throw new System.NotImplementedException();
+            try
+            {
+                string rawTransacion = request.SignedTransaction.DecodeToString();
+                var result = await _ethereumApi.BroadcastRawAsync(rawTransacion);
+            }
+            catch (JsonException ex)
+            {
+                throw new RequestValidationException("Failed to deserialize signed transaction", request.SignedTransaction, ex, nameof(request.SignedTransaction));
+            }
         }
     }
 }

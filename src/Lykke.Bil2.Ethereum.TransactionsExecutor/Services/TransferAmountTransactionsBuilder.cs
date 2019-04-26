@@ -1,15 +1,22 @@
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Lykke.Bil2.Contract.Common.Exceptions;
 using Lykke.Bil2.Contract.TransactionsExecutor.Requests;
 using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
+using Lykke.Numerics;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Lykke.Bil2.Contract.Common.Extensions;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class TransferAmountTransactionsBuilder : ITransferAmountTransactionsBuilder
     {
-        public TransferAmountTransactionsBuilder(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private readonly IEthereumApi _ethereumApi;
+
+        public TransferAmountTransactionsBuilder(IEthereumApi ethereumApi)
         {
+            _ethereumApi = ethereumApi;
         }
 
         public async Task<BuildTransactionResponse> BuildTransferAmountAsync(BuildTransferAmountTransactionRequest request)
@@ -32,9 +39,17 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
             //     if there are any other errors.
             //     Likely a temporary issue with infrastructure or configuration,
             //     request should be repeated later.
+            if (request.Transfers.Count != 1)
+                throw new RequestValidationException("Invalid transfers count, must be exactly 1");
 
+            if (request.Fees.Count != 3)
+                throw new RequestValidationException("Invalid fees count, must be exactly 3");
 
-            throw new System.NotImplementedException();
+            var transfer = request.Transfers.First();
+
+            var transactionRaw = await _ethereumApi.BuildTransactionAsync(transfer, request.Fees);
+
+            return new BuildTransactionResponse(transactionRaw.ToBase58());
         }
     }
 }

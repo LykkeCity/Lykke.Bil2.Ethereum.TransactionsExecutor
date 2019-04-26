@@ -1,22 +1,21 @@
-using System;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
-using Lykke.Bil2.Contract.Common;
-using Lykke.Bil2.Contract.TransactionsExecutor;
-using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
+﻿using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
 using Lykke.Bil2.SharedDomain;
+using Nethereum.Util;
+using System.Threading.Tasks;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class AddressValidator : IAddressValidator
     {
+        private readonly AddressUtil _addressUtil;
+
         public AddressValidator(/* TODO: Provide specific settings and dependencies, if necessary */)
         {
+            _addressUtil = new AddressUtil();
         }
 
-        public async Task<AddressValidityResponse> ValidateAsync(string address, AddressTagType? tagType = null, string tag = null)
+        public Task<AddressValidityResponse> ValidateAsync(string address, AddressTagType? tagType = null, string tag = null)
         {
             // TODO: validate address and, optionally, tag type and tag
             //
@@ -32,26 +31,15 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
             //
             // For example, for shared deposit wallet and numeric tag approach (used in Ripple f.e.) validation may look like:
             //
-            // if (tag == null)
-            // {
-            //     if (CheckIfTagIsRequiredForAddress(address))
-            //     {
-            //         return new AddressValidityResponse(AddressValidationResult.RequiredTagMissed);
-            //     }
-            // }
-            // else if (tagType == AddressTagType.Number && !long.TryParse(tag, out var _))
-            // {
-            //     return new AddressValidityResponse(AddressValidationResult.InvalidTagFormat);
-            // }
-            //
-            // var isAddressFormatValid = ...;
-            //
-            // return !isAddressFormatValid
-            //     ? new AddressValidityResponse(AddressValidationResult.InvalidAddressFormat)
-            //     : new AddressValidityResponse(AddressValidationResult.Valid);
 
+            var isAddressFormatValid = !string.IsNullOrEmpty(address) 
+                                       && _addressUtil.IsValidEthereumAddressHexFormat(address);
 
-            throw new NotImplementedException();
+            var result = !isAddressFormatValid
+                ? new AddressValidityResponse(AddressValidationResult.InvalidAddressFormat)
+                : new AddressValidityResponse(AddressValidationResult.Valid);
+
+            return Task.FromResult(result);
         }
     }
 }

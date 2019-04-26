@@ -1,3 +1,4 @@
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
 
@@ -5,8 +6,11 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class HealthProvider : IHealthProvider
     {
-        public HealthProvider(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private readonly IEthereumApi _ethereumApi;
+
+        public HealthProvider(IEthereumApi ethereumApi)
         {
+            _ethereumApi = ethereumApi;
         }
 
         public async Task<string> GetDiseaseAsync()
@@ -15,21 +19,20 @@ namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
             //
             // It is a good place to check if node is synchronized, if possible.
             // For example:
-            //
-            // try
-            // {
-            //     if (!await _nodeClient.GetIsSynchronizedAsync())
-            //     {
-            //         return "Node is not synchronized";
-            //     }
-            // }
-            // catch (HttpRequestException ex)
-            // {
-            //     return $"Node is unavailable: {ex}";
-            // }
 
+            try
+            {
+                if (!await _ethereumApi.GetIsSynchronizedAsync())
+                {
+                    return "Node is not synchronized";
+                }
 
-            throw new System.NotImplementedException();
+                return null;
+            }
+            catch (HttpRequestException ex)
+            {
+                return $"Node is unavailable: {ex}";
+            }
         }
     }
 }

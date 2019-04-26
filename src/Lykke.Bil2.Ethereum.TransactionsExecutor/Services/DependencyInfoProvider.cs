@@ -1,32 +1,38 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
-using Lykke.Bil2.Sdk.TransactionsExecutor.Models;
+﻿using Lykke.Bil2.Contract.TransactionsExecutor.Responses;
 using Lykke.Bil2.Sdk.TransactionsExecutor.Services;
 using Lykke.Bil2.SharedDomain;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Lykke.Bil2.Ethereum.TransactionsExecutor.Services
 {
     public class DependencyInfoProvider : IDependenciesInfoProvider
     {
-        public DependencyInfoProvider(/* TODO: Provide specific settings and dependencies, if necessary */)
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IEthereumApi _ethereumApi;
+
+        public DependencyInfoProvider(IEthereumApi ethereumApi, IHttpClientFactory httpClientFactory)
         {
+            _ethereumApi = ethereumApi;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public Task<IReadOnlyDictionary<DependencyName, DependencyInfo>> GetInfoAsync()
+        public async Task<IReadOnlyDictionary<DependencyName, DependencyInfo>> GetInfoAsync()
         {
-            // TODO: If possible, return current and available new version (if any) of all components, of which current service is dependent.
-            // For Example:
-            //
-            // var nodeAvailableVersion = ...;
-            //
-            // return new Dictionary<DependencyName, DependencyInfo>
-            // {
-            //     {
-            //         "node", 
-            //         new DependencyInfo(new Semver("1.2.3"), new Semver("1.4.2"))
-            //     }
-            // };
+            string runningVersion = await _ethereumApi.GetRunningVersionAsync();
+            var latestRelease = await _httpClientFactory.CreateClient(Startup.ParityGitHubRepository)
+                .GetAsync("releases/latest");
+
+            latestRelease.EnsureSuccessStatusCode();
+
+            dynamic json = JsonConvert.DeserializeObject(await latestRelease.Content.ReadAsStringAsync());
+
+            return new Dictionary<DependencyName, DependencyInfo>
+            {
+                ["node"] = new DependencyInfo(runningVersion, (string) json.tag_name)
+            };
 
             throw new System.NotImplementedException();
         }
